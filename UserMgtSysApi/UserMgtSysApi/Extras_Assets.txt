@@ -1,0 +1,115 @@
+﻿
+{
+  "firstName": "Admin",
+  "username": "admin",
+  "email": "admin@gmail.com",
+  "password": "AdminPassword_123",
+  "confirmPassword": "AdminPassword_123"
+}
+{
+  "firstName": "shahid",
+  "username": "shahidafridi",
+  "email": "shahid1@gmail.com",
+  "password": "Abc_123",
+  "confirmPassword": "Abc_123"
+}
+
+=======================================================================================================================================
+
+[HttpPost("login")]
+public async Task<IActionResult> Login([FromBody] LoginModel model)
+{
+	#region ForPasswordSignIn
+	//var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: false, lockoutOnFailure: false);
+
+	//if (result.Succeeded)
+	//{
+	//	return Ok("Login successful.");
+	//}
+
+	//return BadRequest("Invalid login attempt.");
+	#endregion
+
+	#region ForTokenSignIn
+	var user = await _userManager.FindByEmailAsync(model.Email);
+
+	if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+	{
+		var token = GenerateJwtToken(user);
+		return Ok(new { Token = token });
+	}
+
+	return BadRequest("Invalid login attempt.");
+
+	#endregion
+}
+
+[Authorize]
+[HttpPost("logout")]
+public async Task<IActionResult> Logout()
+{
+	try
+	{
+		//var userEmailClaim = User.FindFirst(ClaimTypes.Email);
+		//var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+		//var userId = userIdClaim?.Value;
+		//var user = await _userManager.FindByIdAsync(userId);
+		await _signInManager.SignOutAsync();
+		return Ok("Logout successful.");
+	}
+	catch (Exception ex)
+	{
+		return BadRequest("Invalid logout attempt.");
+	}
+}
+
+
+
+private string GenerateJwtToken(ApplicationUser user)
+{
+	var tokenHandler = new JwtSecurityTokenHandler();
+	var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+			
+	// Add more claims as needed
+	var tokenDescriptor = new SecurityTokenDescriptor
+	{
+		Subject = new ClaimsIdentity(new Claim[]
+		{
+			new(ClaimTypes.NameIdentifier, user.Id),
+			new(ClaimTypes.Name, user.UserName),
+			new(ClaimTypes.Email, user.Email),
+			// Add more claims as needed
+		}),
+		Expires = DateTime.UtcNow.AddHours(1), // Token expiration time
+		SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+		Issuer = _configuration["Jwt:Issuer"],
+		Audience = _configuration["Jwt:Audience"]
+	};
+	var token = tokenHandler.CreateToken(tokenDescriptor);
+	return tokenHandler.WriteToken(token);
+}
+
+
+[Authorize(Roles = "Admin")]
+[HttpPost("change-password")]
+public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+{
+	// Get the current user's information
+	//var userId = User.FindFirst(ClaimTypes.Name)?.Value;
+	var user = await _userManager.FindByIdAsync(model.UserId);
+
+	if (user == null)
+	{
+		return NotFound("User not found.");
+	}
+
+	// Change password
+	var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+
+	if (result.Succeeded)
+	{
+		return Ok("Password changed successfully.");
+	}
+
+	return BadRequest(result.Errors);
+}

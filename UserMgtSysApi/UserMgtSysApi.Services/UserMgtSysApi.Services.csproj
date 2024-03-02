@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UserMgtSysApi.Data\UserMgtSysApi.Data.csproj" />
+    <ProjectReference Include="..\UserMgtSysApi.Models\UserMgtSysApi.Models.csproj" />
+  </ItemGroup>
+
+</Project>
