@@ -1,2 +1,2 @@
-# UserMgtSys
-A complete open source user management system
+# User Management System
+A complete open-source user management system.
